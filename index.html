@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>タイマー</title>
+<style>
+  :root {
+    --bg: #0f1220;
+    --panel: #191d33;
+    --fg: #eef1ff;
+    --muted: #9aa3c7;
+    --accent: #5b8cff;
+    --accent-2: #38d39f;
+    --track: #262b4a;
+    --danger: #ff6b81;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    font-family: "Segoe UI", "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif;
+    background: radial-gradient(1200px 700px at 50% -10%, #1d2347 0%, var(--bg) 60%);
+    color: var(--fg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 420px;
+    background: color-mix(in srgb, var(--panel) 92%, transparent);
+    border: 1px solid #2b3157;
+    border-radius: 24px;
+    padding: 28px 24px 22px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .45);
+    text-align: center;
+  }
+
+  h1 {
+    margin: 0 0 18px;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: .18em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .clock {
+    position: relative;
+    width: 260px;
+    height: 260px;
+    margin: 0 auto 18px;
+  }
+
+  .clock svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+
+  .clock circle {
+    fill: none;
+    stroke-width: 12;
+    stroke-linecap: round;
+  }
+
+  .track { stroke: var(--track); }
+
+  .progress {
+    stroke: url(#grad);
+    stroke-dasharray: 678.58;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset .2s linear;
+  }
+
+  .display {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .time {
+    font-size: 56px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .02em;
+    line-height: 1;
+  }
+
+  .status {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: .1em;
+    min-height: 18px;
+  }
+
+  .app.done .progress { stroke: var(--accent-2); }
+  .app.done .time { color: var(--accent-2); animation: pop .6s ease; }
+
+  @keyframes pop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.12); }
+    100% { transform: scale(1); }
+  }
+
+  .setup {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+
+  .setup label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .setup input {
+    width: 78px;
+    padding: 9px 10px;
+    font-size: 18px;
+    text-align: center;
+    color: var(--fg);
+    background: #121630;
+    border: 1px solid #2f3767;
+    border-radius: 10px;
+    outline: none;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .setup input:focus { border-color: var(--accent); }
+  .setup input:disabled { opacity: .45; }
+
+  .presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+
+  .presets button {
+    padding: 7px 14px;
+    font-size: 13px;
+    color: var(--muted);
+    background: #141833;
+    border: 1px solid #2c3363;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: .15s;
+  }
+
+  .presets button:hover {
+    color: var(--fg);
+    border-color: var(--accent);
+  }
+
+  .controls {
+    display: flex;
+    gap: 12px;
+  }
+
+  .controls button {
+    flex: 1;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 14px;
+    border: 1px solid #2f3767;
+    background: #171c39;
+    color: var(--fg);
+    cursor: pointer;
+    transition: .15s;
+  }
+
+  .controls button:hover { filter: brightness(1.15); }
+  .controls button:active { transform: translateY(1px); }
+
+  .controls .primary {
+    background: linear-gradient(135deg, var(--accent), #7a5bff);
+    border-color: transparent;
+  }
+
+  .hint {
+    margin: 16px 0 0;
+    font-size: 12px;
+    color: #6f78a3;
+  }
+
+  kbd {
+    padding: 1px 6px;
+    background: #121630;
+    border: 1px solid #2f3767;
+    border-radius: 5px;
+    font-family: inherit;
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+<main class="app" id="app">
+  <h1>Timer</h1>
+
+  <div class="clock">
+    <svg viewBox="0 0 240 240" aria-hidden="true">
+      <defs>
+        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#5b8cff"/>
+          <stop offset="100%" stop-color="#38d39f"/>
+        </linearGradient>
+      </defs>
+      <circle class="track" cx="120" cy="120" r="108"/>
+      <circle class="progress" id="ring" cx="120" cy="120" r="108"/>
+    </svg>
+    <div class="display">
+      <div class="time" id="time" role="timer" aria-live="polite">05:00</div>
+      <div class="status" id="status">準備OK</div>
+    </div>
+  </div>
+
+  <div class="setup">
+    <label><input type="number" id="minutes" min="0" max="99" value="5" aria-label="分"> 分</label>
+    <label><input type="number" id="seconds" min="0" max="59" value="0" aria-label="秒"> 秒</label>
+  </div>
+
+  <div class="presets" id="presets">
+    <button data-sec="60">1分</button>
+    <button data-sec="180">3分</button>
+    <button data-sec="300">5分</button>
+    <button data-sec="600">10分</button>
+    <button data-sec="900">15分</button>
+    <button data-sec="1800">30分</button>
+  </div>
+
+  <div class="controls">
+    <button class="primary" id="toggle">スタート</button>
+    <button id="reset">リセット</button>
+  </div>
+
+  <p class="hint"><kbd>Space</kbd> 開始 / 一時停止 ・ <kbd>R</kbd> リセット</p>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var CIRCUMFERENCE = 2 * Math.PI * 108; // r = 108
+  var TITLE = "タイマー";
+
+  var app = document.getElementById("app");
+  var ring = document.getElementById("ring");
+  var timeEl = document.getElementById("time");
+  var statusEl = document.getElementById("status");
+  var minutesInput = document.getElementById("minutes");
+  var secondsInput = document.getElementById("seconds");
+  var toggleBtn = document.getElementById("toggle");
+  var resetBtn = document.getElementById("reset");
+  var presets = document.getElementById("presets");
+
+  var totalMs = 5 * 60 * 1000;
+  var remainingMs = totalMs;
+  var running = false;
+  var endAt = 0;
+  var intervalId = null;
+
+  ring.style.strokeDasharray = CIRCUMFERENCE;
+
+  function clamp(value, min, max) {
+    value = parseInt(value, 10);
+    if (isNaN(value)) value = 0;
+    return Math.min(Math.max(value, min), max);
+  }
+
+  function pad(n) {
+    return (n < 10 ? "0" : "") + n;
+  }
+
+  function format(ms) {
+    var total = Math.max(0, Math.ceil(ms / 1000));
+    return pad(Math.floor(total / 60)) + ":" + pad(total % 60);
+  }
+
+  function render() {
+    var text = format(remainingMs);
+    timeEl.textContent = text;
+    document.title = running ? text + " - " + TITLE : TITLE;
+
+    var ratio = totalMs > 0 ? remainingMs / totalMs : 0;
+    ring.style.strokeDashoffset = (CIRCUMFERENCE * (1 - ratio)).toFixed(2);
+  }
+
+  function setStatus(text) {
+    statusEl.textContent = text;
+  }
+
+  function setInputsFromTotal() {
+    minutesInput.value = Math.floor(totalMs / 60000);
+    secondsInput.value = Math.floor((totalMs % 60000) / 1000);
+  }
+
+  function readInputs() {
+    var m = clamp(minutesInput.value, 0, 99);
+    var s = clamp(secondsInput.value, 0, 59);
+    totalMs = (m * 60 + s) * 1000;
+    setInputsFromTotal();
+  }
+
+  function beep() {
+    try {
+      var AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      var ctx = new AudioCtx();
+      var pattern = [0, 0.28, 0.56];
+      pattern.forEach(function (offset) {
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime + offset);
+        gain.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime + offset + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + offset + 0.2);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(ctx.currentTime + offset);
+        osc.stop(ctx.currentTime + offset + 0.22);
+      });
+      setTimeout(function () { ctx.close(); }, 1500);
+    } catch (e) {
+      /* 音が再生できない環境では無視 */
+    }
+  }
+
+  function stopLoop() {
+    if (intervalId) clearInterval(intervalId);
+    intervalId = null;
+  }
+
+  function finish() {
+    running = false;
+    remainingMs = 0;
+    stopLoop();
+    toggleBtn.textContent = "スタート";
+    app.classList.add("done");
+    setStatus("時間です！");
+    render();
+    beep();
+    if ("Notification" in window && Notification.permission === "granted") {
+      try { new Notification("タイマー", { body: "時間です！" }); } catch (e) {}
+    }
+  }
+
+  function tick() {
+    if (!running) return;
+    remainingMs = Math.max(0, endAt - performance.now());
+    render();
+    if (remainingMs <= 0) {
+      finish();
+      return;
+    }
+  }
+
+  function start() {
+    if (totalMs <= 0) return;
+    if (remainingMs <= 0) remainingMs = totalMs;
+    running = true;
+    endAt = performance.now() + remainingMs;
+    app.classList.remove("done");
+    toggleBtn.textContent = "一時停止";
+    setStatus("計測中…");
+    setInputsDisabled(true);
+    render();
+    stopLoop();
+    intervalId = setInterval(tick, 200);
+    tick();
+  }
+
+  function pause() {
+    running = false;
+    stopLoop();
+    toggleBtn.textContent = "再開";
+    setStatus("一時停止中");
+    render();
+  }
+
+  function reset() {
+    running = false;
+    stopLoop();
+    app.classList.remove("done");
+    remainingMs = totalMs;
+    setInputsFromTotal();
+    toggleBtn.textContent = "スタート";
+    setStatus("準備OK");
+    setInputsDisabled(false);
+    render();
+  }
+
+  function setInputsDisabled(disabled) {
+    minutesInput.disabled = disabled;
+    secondsInput.disabled = disabled;
+  }
+
+  function toggle() {
+    if (running) pause();
+    else start();
+  }
+
+  toggleBtn.addEventListener("click", toggle);
+  resetBtn.addEventListener("click", reset);
+
+  [minutesInput, secondsInput].forEach(function (input) {
+    input.addEventListener("change", function () {
+      readInputs();
+      reset();
+    });
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        readInputs();
+        reset();
+      }
+    });
+  });
+
+  presets.addEventListener("click", function (e) {
+    var btn = e.target.closest("button[data-sec]");
+    if (!btn) return;
+    totalMs = parseInt(btn.getAttribute("data-sec"), 10) * 1000;
+    reset();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    var tag = (e.target.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "textarea") return;
+    if (e.code === "Space") {
+      e.preventDefault();
+      toggle();
+    } else if (e.key === "r" || e.key === "R") {
+      e.preventDefault();
+      reset();
+    }
+  });
+
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden && running) tick();
+  });
+
+  if ("Notification" in window && Notification.permission === "default") {
+    try { Notification.requestPermission(); } catch (e) {}
+  }
+
+  setInputsFromTotal();
+  render();
+})();
+</script>
+</body>
+</html>
