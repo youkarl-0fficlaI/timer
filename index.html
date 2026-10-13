@@ -41,6 +41,41 @@
     text-transform: uppercase;
   }
 
+  .modes {
+    display: flex;
+    gap: 0;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+
+  .modes button {
+    padding: 8px 16px;
+    font-size: 13px;
+    color: #000;
+    background: #fff;
+    border: 1px solid #000;
+    cursor: pointer;
+  }
+
+  .modes button:first-child {
+    border-radius: 999px 0 0 999px;
+    border-right: none;
+  }
+
+  .modes button:last-child {
+    border-radius: 0 999px 999px 0;
+  }
+
+  .modes button.active {
+    background: #000;
+    color: #fff;
+  }
+
+  .app.up .setup,
+  .app.up .presets {
+    display: none;
+  }
+
   .clock {
     position: relative;
     width: 220px;
@@ -191,6 +226,11 @@
 <main class="app" id="app">
   <h1>Timer</h1>
 
+  <div class="modes" id="modes">
+    <button data-mode="down" class="active">カウントダウン</button>
+    <button data-mode="up">カウントアップ</button>
+  </div>
+
   <div class="clock">
     <svg viewBox="0 0 240 240" aria-hidden="true">
       <circle class="track" cx="120" cy="120" r="108"/>
@@ -240,11 +280,15 @@
   var toggleBtn = document.getElementById("toggle");
   var resetBtn = document.getElementById("reset");
   var presets = document.getElementById("presets");
+  var modes = document.getElementById("modes");
 
+  var mode = "down"; // "down" | "up"
   var totalMs = 5 * 60 * 1000;
   var remainingMs = totalMs;
+  var elapsedMs = 0;
   var running = false;
   var endAt = 0;
+  var startAt = 0;
   var intervalId = null;
 
   ring.style.strokeDasharray = CIRCUMFERENCE;
@@ -264,12 +308,27 @@
     return pad(Math.floor(total / 60)) + ":" + pad(total % 60);
   }
 
+  function formatUp(ms) {
+    var total = Math.max(0, Math.floor(ms / 1000));
+    var h = Math.floor(total / 3600);
+    var m = Math.floor((total % 3600) / 60);
+    var s = total % 60;
+    if (h > 0) return h + ":" + pad(m) + ":" + pad(s);
+    return pad(m) + ":" + pad(s);
+  }
+
   function render() {
-    var text = format(remainingMs);
+    var text;
+    var ratio;
+    if (mode === "up") {
+      text = formatUp(elapsedMs);
+      ratio = (elapsedMs % 60000) / 60000;
+    } else {
+      text = format(remainingMs);
+      ratio = totalMs > 0 ? remainingMs / totalMs : 0;
+    }
     timeEl.textContent = text;
     document.title = running ? text + " - " + TITLE : TITLE;
-
-    var ratio = totalMs > 0 ? remainingMs / totalMs : 0;
     ring.style.strokeDashoffset = (CIRCUMFERENCE * (1 - ratio)).toFixed(2);
   }
 
@@ -334,6 +393,11 @@
 
   function tick() {
     if (!running) return;
+    if (mode === "up") {
+      elapsedMs = performance.now() - startAt;
+      render();
+      return;
+    }
     remainingMs = Math.max(0, endAt - performance.now());
     render();
     if (remainingMs <= 0) {
@@ -343,6 +407,18 @@
   }
 
   function start() {
+    if (mode === "up") {
+      running = true;
+      startAt = performance.now() - elapsedMs;
+      app.classList.remove("done");
+      toggleBtn.textContent = "一時停止";
+      setStatus("計測中…");
+      render();
+      stopLoop();
+      intervalId = setInterval(tick, 200);
+      tick();
+      return;
+    }
     if (totalMs <= 0) return;
     if (remainingMs <= 0) remainingMs = totalMs;
     running = true;
@@ -369,8 +445,31 @@
     running = false;
     stopLoop();
     app.classList.remove("done");
+    if (mode === "up") {
+      elapsedMs = 0;
+    } else {
+      remainingMs = totalMs;
+      setInputsFromTotal();
+    }
+    toggleBtn.textContent = "スタート";
+    setStatus("準備OK");
+    setInputsDisabled(false);
+    render();
+  }
+
+  function setMode(next) {
+    if (mode === next) return;
+    mode = next;
+    running = false;
+    stopLoop();
+    app.classList.remove("done");
+    app.classList.toggle("up", mode === "up");
+    var buttons = modes.querySelectorAll("button[data-mode]");
+    for (var i = 0; i < buttons.length; i++) {
+      buttons[i].classList.toggle("active", buttons[i].getAttribute("data-mode") === mode);
+    }
+    elapsedMs = 0;
     remainingMs = totalMs;
-    setInputsFromTotal();
     toggleBtn.textContent = "スタート";
     setStatus("準備OK");
     setInputsDisabled(false);
@@ -408,6 +507,12 @@
     if (!btn) return;
     totalMs = parseInt(btn.getAttribute("data-sec"), 10) * 1000;
     reset();
+  });
+
+  modes.addEventListener("click", function (e) {
+    var btn = e.target.closest("button[data-mode]");
+    if (!btn) return;
+    setMode(btn.getAttribute("data-mode"));
   });
 
   document.addEventListener("keydown", function (e) {
