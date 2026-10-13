@@ -5,17 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>タイマー</title>
 <style>
-  :root {
-    --bg: #0f1220;
-    --panel: #191d33;
-    --fg: #eef1ff;
-    --muted: #9aa3c7;
-    --accent: #5b8cff;
-    --accent-2: #38d39f;
-    --track: #262b4a;
-    --danger: #ff6b81;
-  }
-
   * { box-sizing: border-box; }
 
   html, body {
@@ -25,8 +14,8 @@
 
   body {
     font-family: "Segoe UI", "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif;
-    background: radial-gradient(1200px 700px at 50% -10%, #1d2347 0%, var(--bg) 60%);
-    color: var(--fg);
+    background: #fff;
+    color: #000;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -35,29 +24,28 @@
 
   .app {
     width: 100%;
-    max-width: 420px;
-    background: color-mix(in srgb, var(--panel) 92%, transparent);
-    border: 1px solid #2b3157;
-    border-radius: 24px;
-    padding: 28px 24px 22px;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, .45);
+    max-width: 360px;
+    background: #fff;
+    border: 1px solid #000;
+    border-radius: 8px;
+    padding: 24px 20px 18px;
     text-align: center;
   }
 
   h1 {
-    margin: 0 0 18px;
-    font-size: 16px;
-    font-weight: 600;
-    letter-spacing: .18em;
-    color: var(--muted);
+    margin: 0 0 16px;
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: .3em;
+    color: #000;
     text-transform: uppercase;
   }
 
   .clock {
     position: relative;
-    width: 260px;
-    height: 260px;
-    margin: 0 auto 18px;
+    width: 220px;
+    height: 220px;
+    margin: 0 auto 16px;
   }
 
   .clock svg {
@@ -68,17 +56,16 @@
 
   .clock circle {
     fill: none;
-    stroke-width: 12;
-    stroke-linecap: round;
+    stroke-width: 6;
   }
 
-  .track { stroke: var(--track); }
+  .track { stroke: #e5e5e5; }
 
   .progress {
-    stroke: url(#grad);
+    stroke: #000;
+    stroke-linecap: butt;
     stroke-dasharray: 678.58;
     stroke-dashoffset: 0;
-    transition: stroke-dashoffset .2s linear;
   }
 
   .display {
@@ -92,34 +79,25 @@
   }
 
   .time {
-    font-size: 56px;
-    font-weight: 700;
+    font-size: 48px;
+    font-weight: 400;
     font-variant-numeric: tabular-nums;
     letter-spacing: .02em;
     line-height: 1;
   }
 
   .status {
-    font-size: 13px;
-    color: var(--muted);
+    font-size: 12px;
+    color: #666;
     letter-spacing: .1em;
     min-height: 18px;
-  }
-
-  .app.done .progress { stroke: var(--accent-2); }
-  .app.done .time { color: var(--accent-2); animation: pop .6s ease; }
-
-  @keyframes pop {
-    0% { transform: scale(1); }
-    40% { transform: scale(1.12); }
-    100% { transform: scale(1); }
   }
 
   .setup {
     display: flex;
     gap: 12px;
     justify-content: center;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
   }
 
   .setup label {
@@ -127,86 +105,83 @@
     align-items: center;
     gap: 8px;
     font-size: 14px;
-    color: var(--muted);
+    color: #000;
   }
 
   .setup input {
-    width: 78px;
-    padding: 9px 10px;
-    font-size: 18px;
+    width: 72px;
+    padding: 8px;
+    font-size: 16px;
     text-align: center;
-    color: var(--fg);
-    background: #121630;
-    border: 1px solid #2f3767;
-    border-radius: 10px;
+    color: #000;
+    background: #fff;
+    border: 1px solid #000;
+    border-radius: 4px;
     outline: none;
     font-variant-numeric: tabular-nums;
   }
 
-  .setup input:focus { border-color: var(--accent); }
-  .setup input:disabled { opacity: .45; }
+  .setup input:disabled { opacity: .4; }
 
   .presets {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
     justify-content: center;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
   }
 
   .presets button {
-    padding: 7px 14px;
+    padding: 6px 12px;
     font-size: 13px;
-    color: var(--muted);
-    background: #141833;
-    border: 1px solid #2c3363;
+    color: #000;
+    background: #fff;
+    border: 1px solid #000;
     border-radius: 999px;
     cursor: pointer;
-    transition: .15s;
   }
 
   .presets button:hover {
-    color: var(--fg);
-    border-color: var(--accent);
+    background: #000;
+    color: #fff;
   }
 
   .controls {
     display: flex;
-    gap: 12px;
+    gap: 8px;
   }
 
   .controls button {
     flex: 1;
-    padding: 14px;
-    font-size: 16px;
-    font-weight: 600;
-    border-radius: 14px;
-    border: 1px solid #2f3767;
-    background: #171c39;
-    color: var(--fg);
+    padding: 12px;
+    font-size: 15px;
+    font-weight: 400;
+    border-radius: 6px;
+    border: 1px solid #000;
+    background: #fff;
+    color: #000;
     cursor: pointer;
-    transition: .15s;
   }
-
-  .controls button:hover { filter: brightness(1.15); }
-  .controls button:active { transform: translateY(1px); }
 
   .controls .primary {
-    background: linear-gradient(135deg, var(--accent), #7a5bff);
-    border-color: transparent;
+    background: #000;
+    color: #fff;
   }
 
+  .controls button:hover { opacity: .75; }
+  .controls button:active { opacity: .6; }
+
   .hint {
-    margin: 16px 0 0;
+    margin: 14px 0 0;
     font-size: 12px;
-    color: #6f78a3;
+    color: #666;
   }
 
   kbd {
     padding: 1px 6px;
-    background: #121630;
-    border: 1px solid #2f3767;
-    border-radius: 5px;
+    background: #fff;
+    border: 1px solid #666;
+    border-radius: 4px;
     font-family: inherit;
     font-size: 11px;
   }
@@ -218,12 +193,6 @@
 
   <div class="clock">
     <svg viewBox="0 0 240 240" aria-hidden="true">
-      <defs>
-        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#5b8cff"/>
-          <stop offset="100%" stop-color="#38d39f"/>
-        </linearGradient>
-      </defs>
       <circle class="track" cx="120" cy="120" r="108"/>
       <circle class="progress" id="ring" cx="120" cy="120" r="108"/>
     </svg>
